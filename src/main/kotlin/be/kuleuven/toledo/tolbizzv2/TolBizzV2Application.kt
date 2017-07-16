@@ -1,5 +1,6 @@
 package be.kuleuven.toledo.tolbizzv2
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
@@ -12,7 +13,9 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter
+import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
 
 
@@ -45,9 +48,20 @@ fun main(args: Array<String>) {
 }
 
 @RestController
-class MyController {
+class MyController @Autowired constructor(val service: MyService) {
 
-    @GetMapping("/user")
-    fun getUser(@AuthenticationPrincipal actor: User): String = actor.name
+    @GetMapping("/user/{id}")
+    fun getUser(@PathVariable id: String, @AuthenticationPrincipal actor: User) =
+            service.findById(id, actor)
+
+}
+
+@Service
+class MyService {
+
+    fun findById(id: String,  actor: User): Map<String, String> {
+        println("id=$id; actor=${actor.name}")
+        return mapOf("id" to id)
+    }
 
 }
