@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.security.authentication.ProviderManager
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetailsByNameServiceWrapper
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
+import java.security.Principal
+import java.util.*
 
 
 @SpringBootApplication
@@ -51,16 +54,18 @@ fun main(args: Array<String>) {
 class MyController @Autowired constructor(val service: MyService) {
 
     @GetMapping("/user/{id}")
-    fun getUser(@PathVariable id: String, @AuthenticationPrincipal actor: User) =
-            service.findById(id, actor)
+    fun getUser(@PathVariable id: String) = service.findById(id)
 
 }
+
+fun principal(): Optional<Principal> = Optional.ofNullable(SecurityContextHolder.getContext().authentication)
 
 @Service
 class MyService {
 
-    fun findById(id: String,  actor: User): Map<String, String> {
-        println("id=$id; actor=${actor.name}")
+    fun findById(id: String): Map<String, String> {
+        val principal = principal()
+        println("id=$id; actor=${principal.map { it.name }.orElse("unknown")}")
         return mapOf("id" to id)
     }
 
