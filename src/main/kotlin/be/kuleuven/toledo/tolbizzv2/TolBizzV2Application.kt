@@ -26,6 +26,9 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
 import java.io.Serializable
+import java.lang.annotation.Documented
+import java.lang.annotation.Inherited
+import java.lang.annotation.RetentionPolicy
 import java.util.*
 import java.util.function.Predicate
 
@@ -92,11 +95,20 @@ class MyController @Autowired constructor(val service: MyService) {
 
 fun principal(): Optional<Authentication> = Optional.ofNullable(SecurityContextHolder.getContext().authentication)
 
+
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
+@Retention
+@Inherited
+@MustBeDocumented
+@PreAuthorize("hasPermission(#link, 'create')")
+annotation class CanCreateLink
+
 interface MyService {
 
     fun findById(id: String): Map<String, String>
 
-    @PreAuthorize("hasPermission(#link, 'create')")
+    //@PreAuthorize("hasPermission(#link, 'create')")
+    @CanCreateLink
     fun create(link: NewLink): Link
 
     @PreAuthorize("hasPermission(#link, 'update')")
