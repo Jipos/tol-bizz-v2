@@ -92,26 +92,39 @@ class MyController @Autowired constructor(val service: MyService) {
 
 fun principal(): Optional<Authentication> = Optional.ofNullable(SecurityContextHolder.getContext().authentication)
 
-@Service
-class MyService {
+interface MyService {
 
-    fun findById(id: String): Map<String, String> {
+    fun findById(id: String): Map<String, String>
+
+    @PreAuthorize("hasPermission(#link, 'create')")
+    fun create(link: NewLink): Link
+
+    @PreAuthorize("hasPermission(#link, 'update')")
+    fun update(link: Link): Link
+
+    @PreAuthorize("hasPermission(#link, 'delete')")
+    fun delete(link: Link): Link
+
+    @PostAuthorize("hasPermission(#returnObject, 'read')")
+    fun get(id: String): Link
+}
+
+@Service
+class MyServiceImpl: MyService {
+
+    override fun findById(id: String): Map<String, String> {
         val principal = principal()
         println("id=$id; actor=${principal.map { "${it.name} -> ${it.authorities}" }.orElse("unknown")}")
         return mapOf("id" to id)
     }
 
-    @PreAuthorize("hasPermission(#link, 'create')")
-    fun create(link: NewLink): Link = Link("TODO", link.name)
+    override fun create(link: NewLink): Link = Link("TODO", link.name)
 
-    @PreAuthorize("hasPermission(#link, 'update')")
-    fun update(link: Link): Link = link
+    override fun update(link: Link): Link = link
 
-    @PreAuthorize("hasPermission(#link, 'delete')")
-    fun delete(link: Link): Link = link
+    override fun delete(link: Link): Link = link
 
-    @PostAuthorize("hasPermission(#returnObject, 'read')")
-    fun get(id: String): Link = Link(id, "TODO")
+    override fun get(id: String): Link = Link(id, "TODO")
 
 }
 
