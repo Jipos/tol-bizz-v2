@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
+import org.springframework.core.MethodParameter
 import org.springframework.security.access.PermissionEvaluator
 import org.springframework.security.access.prepost.PostAuthorize
 import org.springframework.security.access.prepost.PreAuthorize
@@ -25,13 +26,17 @@ import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.support.WebDataBinderFactory
+import org.springframework.web.context.request.NativeWebRequest
+import org.springframework.web.method.support.HandlerMethodArgumentResolver
+import org.springframework.web.method.support.ModelAndViewContainer
+import org.springframework.web.multipart.MultipartFile
 import java.io.Serializable
-import java.lang.annotation.Documented
 import java.lang.annotation.Inherited
-import java.lang.annotation.RetentionPolicy
 import java.util.*
 import java.util.function.Predicate
-
+import javax.servlet.http.HttpServletRequest
+import kotlin.reflect.KClass
 
 @SpringBootApplication
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -52,6 +57,10 @@ class TolBizzV2Application {
 
 }
 
+fun main(args: Array<String>) {
+    SpringApplication.run(TolBizzV2Application::class.java, *args)
+}
+
 class UsernameOnlyUserDetailsService : UserDetailsService {
 
     override fun loadUserByUsername(username: String?) =
@@ -62,10 +71,6 @@ class UsernameOnlyUserDetailsService : UserDetailsService {
 class MyGrantedAuthority(@JvmField val authority: String): GrantedAuthority {
     override fun getAuthority() = authority
     override fun toString() = authority
-}
-
-fun main(args: Array<String>) {
-    SpringApplication.run(TolBizzV2Application::class.java, *args)
 }
 
 @RestController
@@ -91,6 +96,12 @@ class MyController @Autowired constructor(val service: MyService) {
 
     @GetMapping("/get")
     fun get(): Link = service.get("id")
+
+    @GetMapping("/createUser")
+    fun createRepoUser(): User2 = service.createUser(UserDraft2("first", "last", "email"))
+
+    @GetMapping("/getUser/{id}")
+    fun getRepoUser(@PathVariable id: String): Optional<User2> = service.getUser(id)
 }
 
 fun principal(): Optional<Authentication> = Optional.ofNullable(SecurityContextHolder.getContext().authentication)
@@ -103,6 +114,7 @@ fun principal(): Optional<Authentication> = Optional.ofNullable(SecurityContextH
 @PreAuthorize("hasPermission(#link, 'create')")
 annotation class CanCreateLink
 
+// http://blog.novoj.net/2012/03/27/combining-custom-annotations-for-securing-methods-with-spring-security/
 interface MyService {
 
     fun findById(id: String): Map<String, String>
@@ -119,10 +131,13 @@ interface MyService {
 
     @PostAuthorize("hasPermission(#returnObject, 'read')")
     fun get(id: String): Link
+
+    fun getUser(userId: String): Optional<User2>
+    fun createUser(user: UserDraft2): User2
 }
 
 @Service
-class MyServiceImpl: MyService {
+class MyServiceImpl(val userRepo: UserRepository): MyService {
 
     override fun findById(id: String): Map<String, String> {
         val principal = principal()
@@ -137,6 +152,10 @@ class MyServiceImpl: MyService {
     override fun delete(link: Link): Link = link
 
     override fun get(id: String): Link = Link(id, "TODO")
+
+    override fun createUser(user: UserDraft2): User2 = userRepo.save(User2("newId", user))
+
+    override fun getUser(userId: String): Optional<User2> = userRepo.findById(userId)
 
 }
 
@@ -156,13 +175,43 @@ class MyPermissionEvaluator: PermissionEvaluator {
     }
 }
 
+class ApplicationVersionMethodArgumentResolver(): HandlerMethodArgumentResolver {
 
+    override fun supportsParameter(parameter: MethodParameter) =
+        parameter.parameterName == "version"
+
+    override fun resolveArgument(parameter: MethodParameter, mavContainer: ModelAndViewContainer,
+                                 webRequest: NativeWebRequest, binderFactory: WebDataBinderFactory): Any? {
+        val servletRequest: HttpServletRequest = webRequest.getNativeRequest(HttpServletRequest::class.java)
+
+
+        return webRequest.getHeader("X-Application-Version");
+    }
+}
 interface PollablePermissionEvaluator: PermissionEvaluator, Predicate<Any>
+
+class LinkPermissionEvaluator: PollablePermissionEvaluator {
+
+    companion object {
+        val clazz: KClass<Link> = Link::class
+    }
+
+    override fun hasPermission(authentication: Authentication?, targetDomainObject: Any?, permission: Any?): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun hasPermission(authentication: Authentication?, targetId: Serializable?, targetType: String?, permission: Any?): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun test(obj: Any): Boolean = clazz.isInstance(obj)
+
+}
 
 class CompositePermissionEvaluator @Autowired constructor(val evaluators: List<PollablePermissionEvaluator>): PermissionEvaluator {
 
     override fun hasPermission(authentication: Authentication?, targetId: Serializable?, targetType: String?, permission: Any?): Boolean {
-        throw UnsupportedOperationException("Only targetDomainObject based permision checks are supported.")
+        throw UnsupportedOperationException("Only targetDomainObject based permission checks are supported.")
     }
 
     override fun hasPermission(authentication: Authentication?, targetDomainObject: Any?, permission: Any?) =
