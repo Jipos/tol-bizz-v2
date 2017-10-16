@@ -1,0 +1,57 @@
+<html>
+<head></head>
+<body>
+<h1>Automatically convert an excel to a list of DTOs</h1>
+
+<h2>(argumentResolver) non-multipart form - non-dtoList - text type</h2>
+<form action="excelDto" method="post">
+    <p><input type="text" name="foobar"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) non-multipart form - non-dtoList - file type</h2>
+<form action="excelDto" method="post">
+    <p><input type="file" name="foobar"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) non-multipart form - dtoList - text type</h2>
+<form action="excelDto" method="post">
+    <p><input type="text" name="dtoList"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) non-multipart form - dtoList - file type</h2>
+<form action="excelDto" method="post">
+    <p><input type="file" name="dtoList"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) multipart form - non-dtoList - text type</h2>
+<form action="excelDto" method="post" enctype="multipart/form-data">
+    <p><input type="text" name="foobar"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) multipart form - non-dtoList - file type</h2>
+<form action="excelDto" method="post" enctype="multipart/form-data">
+    <p><input type="file" name="foobar"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) multipart form - dtoList - text type</h2>
+<form action="excelDto" method="post" enctype="multipart/form-data">
+    <p><input type="text" name="dtoList"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(argumentResolver) multipart form - dtoList - file type</h2>
+<form action="excelDto" method="post" enctype="multipart/form-data">
+    <p><input type="file" name="dtoList"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(MessageConverter) multipart form - dtoList - file type</h2>
+<form action="excelDto2" method="post" enctype="multipart/form-data">
+    <p><input type="file" name="dtoList"><button type="submit">Submit</button></p>
+</form>
+
+<h2>(default Spring) multipart form - excel - file type</h2>
+<form action="excelDto3" method="post" enctype="multipart/form-data">
+    <p><input type="file" name="excel"><button type="submit">Submit</button></p>
+</form>
+
+</body>
+</html>
